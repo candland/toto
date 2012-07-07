@@ -22,7 +22,7 @@ module Toto
   Paths = {
     :templates => "templates",
     :pages => "templates/pages",
-    :articles => "articles"
+    :articles => "articles/**"
   }
 
   def self.env
@@ -90,7 +90,8 @@ module Toto
     end
 
     def article route
-      Article.new("#{Paths[:articles]}/#{route.join('-')}.#{self[:ext]}", @config).load
+			filename = Dir["#{Paths[:articles]}/#{route.join('-')}.#{self[:ext]}"].first
+      Article.new(filename, @config).load
     end
 
     def /
@@ -227,20 +228,20 @@ module Toto
     end
 
     def load
-      data = if @obj.is_a? String
-        meta, self[:body] = File.read(@obj).split(/\n\n/, 2)
+			data = if @obj.is_a? String
+				meta, self[:body] = File.read(@obj).split(/\n\n/, 2)
 
-        # use the date from the filename, or else toto won't find the article
-        @obj =~ /\/(\d{4}-\d{2}-\d{2})[^\/]*$/
-        ($1 ? {:date => $1} : {}).merge(YAML.load(meta))
-      elsif @obj.is_a? Hash
-        @obj
-      end.inject({}) {|h, (k,v)| h.merge(k.to_sym => v) }
+				# use the date from the filename, or else toto won't find the article
+				@obj =~ /\/(\d{4}-\d{2}-\d{2})[^\/]*$/
+				($1 ? {:date => $1} : {}).merge(YAML.load(meta))
+			elsif @obj.is_a? Hash
+				@obj
+			end.inject({}) {|h, (k,v)| h.merge(k.to_sym => v) }
 
-      self.taint
-      self.update data
-      self[:date] = Date.parse(self[:date].gsub('/', '-')) rescue Date.today
-      self
+			self.taint
+			self.update data
+			self[:date] = Date.parse(self[:date].gsub('/', '-')) rescue Date.today
+			self
     end
 
     def [] key
